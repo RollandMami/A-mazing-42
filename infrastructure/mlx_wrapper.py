@@ -1,0 +1,1 @@
+# Initialisation MiniLibX et fenêtrage

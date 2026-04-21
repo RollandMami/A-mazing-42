@@ -1,0 +1,1 @@
+# Conversion de la grille en pixels/images

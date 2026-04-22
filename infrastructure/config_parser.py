@@ -14,6 +14,8 @@ class ConfigLoader(ABC):
 
 class TxtLoader(ConfigLoader):
     def load(self, path: str) -> Dict[str, str]:
+        if not path.endswith(".txt"):
+            raise ConfigError("Le fichier de configuration doit être un .txt")
         parsed_data: Dict[str, str] = {}
         with open(path, "r", encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
@@ -72,8 +74,6 @@ class Config:
     def configuration_validator(file_path: str, loader: ConfigLoader) -> Dict[str, str]:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Le fichier {file_path} est introuvable.")
-        #if not file_path.endswith(".txt"):
-        #    raise ConfigError("Le fichier de configuration doit être un .txt")
         parsed_data: Dict[str, str] = loader.load(file_path)
         for key in parsed_data:
             if key not in Config.REQUIRED and key not in Config.OPTIONAL:

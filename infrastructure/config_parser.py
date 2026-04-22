@@ -1,9 +1,30 @@
 import os
 from typing import Dict, List, Any
-
+from abc import ABC, abstractmethod
 
 class ConfigError(Exception):
     pass
+
+
+class ConfigLoader(ABC):
+    @abstractmethod
+    def load(self, path: str) -> Dict[str, str]:
+        pass
+
+
+class TxtLoader(ConfigLoader):
+    def load(self, path: str) -> Dict[str, str]:
+        parsed_data: Dict[str, str] = {}
+        with open(path, "r", encoding="utf-8") as f:
+            for line_num, line in enumerate(f, 1):
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" not in line:
+                    raise ConfigError(f"line_{line_num}::Bad syntax,  file must contain one ‘KEY=VALUE‘ pair per line")
+                key, value = [part.strip() for part in line.split("=", 1)]
+                parsed_data[key] = value
+        return parsed_data
 
 
 class Config:
@@ -15,9 +36,9 @@ class Config:
         ]
     OPTIONAL = ["SEED", "ALGORITHM", "DISPLAY_MODE"]
 
-    def __init__(self, cfg_path: str) -> None:
+    def __init__(self, cfg_path: str, loader: ConfigLoader = TxtLoader()) -> None:
         self._path: str = cfg_path
-        self._data: Dict[str, Any] = self._parse_file()
+        self._data: Dict[str, Any] = self._parse_file(loader)
         
 
     @property
@@ -48,22 +69,15 @@ class Config:
     def algorithm(self) -> str: return self._data.get("ALGORITHM", "DFS")
 
     @staticmethod
-    def configuration_validator(file_path: str) -> Dict[str, str]:
+    def configuration_validator(file_path: str, loader: ConfigLoader) -> Dict[str, str]:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Le fichier {file_path} est introuvable.")
-        if not file_path.endswith(".txt"):
-            raise ConfigError("Le fichier de configuration doit être un .txt")
-        parsed_data: Dict[str, str] = {}
-        with open(file_path, "r", encoding="utf-8") as f:
-            for line_num, line in enumerate(f, 1):
-                line = line.strip()
-                if not line or line.startswith("#"): continue
-                if "=" not in line:
-                    raise ConfigError(f"line_{line_num}::Bad syntax,  file must contain one ‘KEY=VALUE‘ pair per line")
-                key, value = [part.strip() for part in line.split("=", 1)]
-                if key not in Config.REQUIRED and key not in Config.OPTIONAL:
+        #if not file_path.endswith(".txt"):
+        #    raise ConfigError("Le fichier de configuration doit être un .txt")
+        parsed_data: Dict[str, str] = loader.load(file_path)
+        for key in parsed_data:
+            if key not in Config.REQUIRED and key not in Config.OPTIONAL:
                     raise ConfigError(f"Unknown key: {key}")
-                parsed_data[key] = value
         missing: List[str] = [key for key in Config.REQUIRED if key not in parsed_data]
         if missing:
             raise ConfigError(f"missing keyword {' :: '.join(missing)}")
@@ -96,8 +110,8 @@ class Config:
             raise ConfigError(f"Data type error : {e}")
         return True
 
-    def _parse_file(self) -> Dict[str, Any]:
-        raw: Dict[str, str] = Config.configuration_validator(self.path)
+    def _parse_file(self, loader: ConfigLoader) -> Dict[str, Any]:
+        raw: Dict[str, str] = Config.configuration_validator(self.path, loader)
         final: Dict[str, Any] = {}
         for k, v in raw.items():
             if k in ["WIDTH", "HEIGHT", "SEED"]:

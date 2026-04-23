@@ -41,7 +41,6 @@ class Config:
     def __init__(self, cfg_path: str, loader: ConfigLoader = TxtLoader()) -> None:
         self._path: str = cfg_path
         self._data: Dict[str, Any] = self._parse_file(loader)
-        
 
     @property
     def path(self) -> str: return self._path

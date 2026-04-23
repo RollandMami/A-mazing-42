@@ -1,4 +1,4 @@
-from infrastructure import Config, ConfigError
+from infrastructure import Config
 import random
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Set
@@ -8,6 +8,7 @@ from typing import List, Tuple, Set
 class MazeError(Exception):
     """Classe de base pour les erreurs du projet"""
     pass
+
 
 class GenerationError(MazeError):
     """Erreur spécifique à l'algorithme de génération"""
@@ -45,7 +46,9 @@ class Base_Gen(ABC):
         self.output_file: str = cfg.output_file
         self._perfect: bool = cfg.perfect
         self._seed: int = cfg.seed
-        self.maze: list[int] = [[15 for _ in range(self._height)] for _ in range(self._width)]
+        self.maze: list[int] = [
+            [15 for _ in range(self._height)] for _ in range(self._width)
+        ]
         self._direction: dict[str, tuple] = {
             "N": (0, -1, 0),
             "E": (1, 0, 1),
@@ -87,16 +90,24 @@ class Dfs_generator(Base_Gen):
             if self.width <= 0 or self.height <= 0:
                 raise GenerationError("La largeur doit être positive.")
             random.seed(self.seed)
-            start_node: Tuple[int, int] = self._entry if self._entry else (0, 0)
+            if not self._entry:
+                self._entry = (0, 0)
+            start_node: Tuple[int, int] = self._entry
             stack: List[Tuple[int, int]] = [start_node]
             visited: Set[Tuple[int, int]] = {start_node}
             while stack:
-                curr_x , curr_y = stack[-1]
+                curr_x, curr_y = stack[-1]
                 voisin: list = self._get_voisin(curr_x, curr_y, visited)
                 if voisin:
-                    next_x, next_y, bit_index, direction = random.choice(voisin)
-                    self._break_wall(curr_x, curr_y, next_x, next_y, bit_index)
-                    #deplacement
+                    next_x, next_y, bit_index, direction = random.choice(
+                        voisin
+                    )
+                    self._break_wall(
+                        curr_x, curr_y,
+                        next_x, next_y,
+                        bit_index
+                    )
+                    # deplacement
                     visited.add((next_x, next_y))
                     stack.append((next_x, next_y))
                 else:
@@ -108,15 +119,20 @@ class Dfs_generator(Base_Gen):
         voisin: list = []
         for direction, (dx, dy, bit_index) in self.direction.items():
             nx, ny = curr_x + dx, curr_y + dy
-            if 0 <= nx < self.width and 0 <= ny < self.height and (nx, ny) not in visited:
+            if (
+                0 <= nx < self.width
+                and 0 <= ny < self.height
+                and (nx, ny) not in visited
+            ):
                 voisin.append((nx, ny, bit_index, direction))
         return voisin
 
-    def _break_wall(self, cx: int, cy: int, next_x: int, next_y: int, bit_index: int) -> None:
+    def _break_wall(self, cx: int, cy: int, next_x: int,
+                    next_y: int, bit_index: int
+                    ) -> None:
         poids: int = 2 ** bit_index
         self.maze[cy][cx] -= poids
-        #la mur opposée chez le voisin
+        # la mur opposée chez le voisin
         bit_opose: int = (bit_index + 2) % 4
         poids_voisin: int = 2 ** bit_opose
         self.maze[next_y][next_x] -= poids_voisin
-

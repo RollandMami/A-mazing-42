@@ -2,7 +2,6 @@ from infrastructure import Config
 import random
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Set
-# Algorithme Recursive Backtracker
 
 
 class MazeError(Exception):
@@ -55,6 +54,18 @@ class Base_Gen(ABC):
             "S": (0, 1, 2),
             "O": (-1, 0, 3)
         }
+        self._size: int = self.height * self.width
+        self._min_logo_size: int = 12 * 8
+        self._mask_42: List[Tuple(int, int)] = [
+            # 4
+            (-3, -2), (-3, -1), (-3, 0), (-2, 0),
+            (-1, 0), (-1, 1), (-1, 2),
+            # 2
+            (1, -2), (2, -2), (3, -2), (3, -1),
+            (3, 0), (2, 0), (1, 0), (1, 1), (1, 2),
+            (1, 3), (2, 3), (3, 3)
+        ]
+        map(self._mask_42)
         self._writer = writer if writer else TxtWriter()
 
     @property
@@ -76,6 +87,8 @@ class Base_Gen(ABC):
 class Dfs_generator(Base_Gen):
     def __init__(self, cfg: Config, writer: BaseWriter) -> None:
         super().__init__(cfg, writer)
+        if not self._seed:
+            self._seed = random.randint(0, 999)
 
     @property
     def seed(self):
@@ -95,6 +108,8 @@ class Dfs_generator(Base_Gen):
             start_node: Tuple[int, int] = self._entry
             stack: List[Tuple[int, int]] = [start_node]
             visited: Set[Tuple[int, int]] = {start_node}
+            if self._size >= self._min_logo_size:
+                visited.add(self._mask_42)
             while stack:
                 curr_x, curr_y = stack[-1]
                 voisin: list = self._get_voisin(curr_x, curr_y, visited)

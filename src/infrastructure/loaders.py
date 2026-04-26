@@ -3,6 +3,9 @@ from abc import ABC, abstractmethod
 from . import ConfigError
 
 
+MAX_LINES = 1000  # Sécurité contre les fichiers malveillants
+
+
 class ConfigLoader(ABC):
     @abstractmethod
     def load(self, path: str) -> Dict[str, str]:
@@ -16,6 +19,9 @@ class TxtLoader(ConfigLoader):
         parsed_data: Dict[str, str] = {}
         with open(path, "r", encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
+                if line_num > MAX_LINES:
+                    raise ConfigError("Fichier de configuration trop \
+volumineux")
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue

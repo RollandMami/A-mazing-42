@@ -1,21 +1,9 @@
 ENV = env/
-ifeq ($(OS),Windows_NT)
-    PYTHON = python
-    BIN = $(ENV)/Scripts
-    RM = rd /s /q
-    MKDIR = mkdir
-    SEP = \\
-	activation:
-		$(BIN)/activate
-else
-    PYTHON = python3
-    BIN = $(ENV)/bin
-    RM = rm -rf
-    MKDIR = mkdir -p
-    SEP = /
-	activation:
-		source $(BIN)/activate
-endif
+PYTHON = python3
+BIN = $(ENV)/bin
+RM = rm -rf
+MKDIR = mkdir -p
+
 CFG = config.txt
 MAIN = a_maze_ing.py
 LFLAGES = --warn-return-any\
@@ -39,8 +27,9 @@ debug:
 	$(BIN)/$(PYTHON) -m pdb $(MAIN) $(CFG) 
 
 clean:
-	$(RM) *__pycache__/*
-	$(RM) -rf *.mypy_cache/*
+	$(RM) .mypy_cache/ .pytest_cache/
+	find . -type d -name "__pycache__" -exec $(RM) {} +
+	find . -type f -name "*.pyc" -delete
 
 lint:
 	$(PYTHON) -m flake8 .
@@ -49,3 +38,5 @@ lint:
 lint-strict:
 	$(PYTHON) -m flake8 . $(STRICT)
 	$(PYTHON) -m mypy . $(STRICT)
+
+.PHONY: all install run test clean fclean lint

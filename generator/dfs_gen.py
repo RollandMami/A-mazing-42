@@ -46,7 +46,7 @@ class Base_Gen(ABC):
         self._perfect: bool = cfg.perfect
         self._seed: int = cfg.seed
         self.maze: list[int] = [
-            [15 for _ in range(self._height)] for _ in range(self._width)
+            [15 for _ in range(self._width)] for _ in range(self._height)
         ]
         self._direction: dict[str, tuple] = {
             "N": (0, -1, 0),
@@ -56,16 +56,6 @@ class Base_Gen(ABC):
         }
         self._size: int = self.height * self.width
         self._min_logo_size: int = 12 * 8
-        self._mask_42: List[Tuple(int, int)] = [
-            # 4
-            (-3, -2), (-3, -1), (-3, 0), (-2, 0),
-            (-1, 0), (-1, 1), (-1, 2),
-            # 2
-            (1, -2), (2, -2), (3, -2), (3, -1),
-            (3, 0), (2, 0), (1, 0), (1, 1), (1, 2),
-            (1, 3), (2, 3), (3, 3)
-        ]
-        map(self._mask_42)
         self._writer = writer if writer else TxtWriter()
 
     @property
@@ -83,12 +73,30 @@ class Base_Gen(ABC):
     def export(self) -> None:
         self._writer.write(self.maze, self.output_file)
 
+    def _apply_mask(self) -> List[Tuple[int, int]]:
+        coords: List[Tuple[int, int]] = [
+            # 4
+            (-3, -2), (-3, -1), (-3, 0), (-2, 0),
+            (-1, 0), (-1, 1), (-1, 2),
+            # 2
+            (1, -2), (2, -2), (3, -2), (3, -1),
+            (3, 0), (2, 0), (1, 0), (1, 1), (1, 2),
+            (1, 3), (2, 3), (3, 3)
+        ]
+        middle_x: int = self.width // 2
+        middle_y: int = self.height // 2
+        return [
+            (point[0] + middle_x, point[1] + middle_y) for point in coords
+            ]
+
 
 class Dfs_generator(Base_Gen):
     def __init__(self, cfg: Config, writer: BaseWriter) -> None:
         super().__init__(cfg, writer)
-        if not self._seed:
+        if self._seed is None:
             self._seed = random.randint(0, 999)
+        if self._size >= self._min_logo_size:
+            self._mask_42 = self._apply_mask()
 
     @property
     def seed(self):
@@ -108,8 +116,9 @@ class Dfs_generator(Base_Gen):
             start_node: Tuple[int, int] = self._entry
             stack: List[Tuple[int, int]] = [start_node]
             visited: Set[Tuple[int, int]] = {start_node}
-            if self._size >= self._min_logo_size:
-                visited.add(self._mask_42)
+            if self._mask_42:
+                for point in self._mask_42:
+                    visited.add(point)
             while stack:
                 curr_x, curr_y = stack[-1]
                 voisin: list = self._get_voisin(curr_x, curr_y, visited)

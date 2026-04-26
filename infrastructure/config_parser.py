@@ -2,6 +2,7 @@ import os
 from typing import Dict, List, Any
 from abc import ABC, abstractmethod
 
+
 class ConfigError(Exception):
     pass
 
@@ -23,7 +24,8 @@ class TxtLoader(ConfigLoader):
                 if not line or line.startswith("#"):
                     continue
                 if "=" not in line:
-                    raise ConfigError(f"line_{line_num}::Bad syntax,  file must contain one ‘KEY=VALUE‘ pair per line")
+                    raise ConfigError(f"line_{line_num}::Bad syntax,  file \
+must contain one ‘KEY=VALUE‘ pair per line")
                 key, value = [part.strip() for part in line.split("=", 1)]
                 parsed_data[key] = value
         return parsed_data
@@ -38,7 +40,11 @@ class Config:
         ]
     OPTIONAL = ["SEED", "ALGORITHM", "DISPLAY_MODE"]
 
-    def __init__(self, cfg_path: str, loader: ConfigLoader = TxtLoader()) -> None:
+    def __init__(
+            self,
+            cfg_path: str,
+            loader: ConfigLoader = TxtLoader()
+                ) -> None:
         self._path: str = cfg_path
         self._data: Dict[str, Any] = self._parse_file(loader)
 
@@ -64,20 +70,25 @@ class Config:
     def perfect(self) -> bool: return self._data.get("PERFECT")
 
     @property
-    def seed(self) -> int: return self._data.get("SEED", 0)
+    def seed(self) -> int: return self._data.get("SEED")
 
     @property
     def algorithm(self) -> str: return self._data.get("ALGORITHM", "DFS")
 
     @staticmethod
-    def configuration_validator(file_path: str, loader: ConfigLoader) -> Dict[str, str]:
+    def configuration_validator(
+            file_path: str,
+            loader: ConfigLoader
+                ) -> Dict[str, str]:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Le fichier {file_path} est introuvable.")
         parsed_data: Dict[str, str] = loader.load(file_path)
         for key in parsed_data:
             if key not in Config.REQUIRED and key not in Config.OPTIONAL:
-                    raise ConfigError(f"Unknown key: {key}")
-        missing: List[str] = [key for key in Config.REQUIRED if key not in parsed_data]
+                raise ConfigError(f"Unknown key: {key}")
+        missing: List[str] = [
+            key for key in Config.REQUIRED if key not in parsed_data
+            ]
         if missing:
             raise ConfigError(f"missing keyword {' :: '.join(missing)}")
         # validation values:
@@ -90,21 +101,27 @@ class Config:
         try:
             w, h = int(data["WIDTH"]), int(data["HEIGHT"])
             if w <= 0 or h <= 0:
-                raise ConfigError(f"Impossible maze parameter >> width({w}) or height({h}) must be positif number")
+                raise ConfigError(f"Impossible maze parameter >> width({w})\
+or height({h}) must be positif number")
             for key in ["ENTRY", "EXIT"]:
                 coords = [int(c) for c in data[key].split(",")]
                 if len(coords) != 2:
-                    raise ValueError(f"{key}: value must be positive couple of like (x, y)")
+                    raise ValueError(f"{key}: value must be positive couple \
+of like (x, y)")
                 x, y = coords
-                if  not (0 <= x < w and 0 <= y < h):
-                    raise ConfigError(f"Impossible maze parameter:\n\t{key} ({x},{y}) est hors limites ({w}x{h})")
+                if not (0 <= x < w and 0 <= y < h):
+                    raise ConfigError(f"Impossible maze parameter:\
+\n\t{key} ({x},{y}) est hors limites ({w}x{h})")
             out_file: str = data["OUTPUT_FILE"]
-            if not out_file.endswith(".txt") or any(sep in out_file for sep in [" ", "\t", "\n", "\r"]):
-                raise ValueError("Output_file must be txt format, and not include separator")
+            if not out_file.endswith(".txt") or any(
+                    sep in out_file for sep in [" ", "\t", "\n", "\r"]):
+                raise ValueError("Output_file must be txt format, \
+and not include separator")
             if "SEED" in data:
                 float(data["SEED"])
             if data["PERFECT"] not in ["True", "False"]:
-                raise ValueError("PERFECT key must handle boolean field like True or False")
+                raise ValueError("PERFECT key must handle boolean field \
+like True or False")
         except ValueError as e:
             raise ConfigError(f"Data type error : {e}")
         return True

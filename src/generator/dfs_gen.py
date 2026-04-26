@@ -24,7 +24,7 @@ class BaseWriter(ABC):
 class TxtWriter(BaseWriter):
     def write(self, maze: List[List[int]], destination: str) -> None:
         try:
-            with open(destination, 'w') as f:
+            with open(destination, 'a') as f:
                 for row in maze:
                     line = "".join(format(cell, 'X') for cell in row)
                     f.write(line + "\n")
@@ -45,7 +45,7 @@ class Base_Gen(ABC):
         self.output_file: str = cfg.output_file
         self._perfect: bool = cfg.perfect
         self._seed: int = cfg.seed
-        self.maze: list[int] = [
+        self.maze: List[List[int]] = [
             [15 for _ in range(self._width)] for _ in range(self._height)
         ]
         self._direction: dict[str, tuple] = {
@@ -54,7 +54,7 @@ class Base_Gen(ABC):
             "S": (0, 1, 2),
             "O": (-1, 0, 3)
         }
-        self._size: int = self.height * self.width
+        self._size: int = self._height * self._width
         self._min_logo_size: int = 12 * 8
         self._writer = writer if writer else TxtWriter()
 
@@ -72,6 +72,9 @@ class Base_Gen(ABC):
 
     def export(self) -> None:
         self._writer.write(self.maze, self.output_file)
+        self._writer.write("\n", self.output_file)
+        self._writer.write(self._entry, self.output_file)
+        self._writer.write(self._exit, self.output_file)
 
     def _apply_mask(self) -> List[Tuple[int, int]]:
         coords: List[Tuple[int, int]] = [
@@ -93,6 +96,7 @@ class Base_Gen(ABC):
 class Dfs_generator(Base_Gen):
     def __init__(self, cfg: Config, writer: BaseWriter) -> None:
         super().__init__(cfg, writer)
+        self._mask_42: list = None
         if self._seed is None:
             self._seed = random.randint(0, 999)
         if self._size >= self._min_logo_size:

@@ -1,10 +1,11 @@
 from infrastructure import Config, BaseWriter
 import random
 from typing import List, Tuple, Set
-from . import GenerationError, Base_Gen
+from generator.Errors import GenerationError
+from generator.base_gen import BaseGen
 
 
-class Dfs_generator(Base_Gen):
+class DfsGenerator(BaseGen):
     def __init__(self, cfg: Config, writer: BaseWriter) -> None:
         super().__init__(cfg, writer)
 

@@ -1,6 +1,6 @@
 import os
 from typing import Dict, List, Any
-from . import ConfigLoader, TxtLoader, ConfigError
+from infrastructure.loaders import ConfigLoader, TxtLoader, ConfigError
 
 
 class Config:
@@ -45,7 +45,7 @@ class Config:
     def seed(self) -> int: return self._data.get("SEED")
 
     @property
-    def algorithm(self) -> str: return self._data.get("ALGORITHM", "DFS")
+    def algorithm(self) -> int: return self._data.get("ALGORITHM", 1)
 
     @staticmethod
     def configuration_validator(

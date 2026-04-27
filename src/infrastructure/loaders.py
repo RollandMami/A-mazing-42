@@ -1,6 +1,6 @@
 from typing import Dict
 from abc import ABC, abstractmethod
-from . import ConfigError
+from infrastructure.Errors import ConfigError
 
 
 MAX_LINES = 1000  # Sécurité contre les fichiers malveillants

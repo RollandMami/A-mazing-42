@@ -4,7 +4,7 @@ from typing import List, Tuple
 import random
 
 
-class Base_Gen(ABC):
+class BaseGen(ABC):
     def __init__(self, cfg: Config, writer: BaseWriter) -> None:
         # dimension du maze:
         self._width: int = cfg.width
@@ -33,6 +33,8 @@ class Base_Gen(ABC):
             self._seed = random.randint(0, 999)
         if self._size >= self._min_logo_size:
             self._mask_42 = self._apply_mask()
+        else:
+            print("La dimension du maze est trop petit pour le chiffre 42")
 
     @property
     def width(self):
@@ -56,9 +58,8 @@ class Base_Gen(ABC):
 
     def export(self) -> None:
         self._writer.write(self.maze, self.output_file)
-        self._writer.write("\n", self.output_file)
-        self._writer.write(self._entry, self.output_file)
-        self._writer.write(self._exit, self.output_file)
+        meta: str = f"\n{self._entry}\n{self._exit}"
+        self._writer.insert(meta, self.output_file)
 
     def _apply_mask(self) -> List[Tuple[int, int]]:
         coords: List[Tuple[int, int]] = [
@@ -75,3 +76,29 @@ class Base_Gen(ABC):
         return [
             (point[0] + middle_x, point[1] + middle_y) for point in coords
             ]
+
+    def _make_imperfection(self) -> None:
+        """Randomly removes walls to create cycles/loops in the maze."""
+        # We break about 10% of the total potential internal walls
+        walls_to_break: int = int(self.width * self.height * 0.1)
+        # Map for opposite directions
+        opposites: dict[str, str] = {"N": "S", "S": "N", "E": "O", "O": "E"}
+        for _ in range(walls_to_break):
+            # Pick a random cell (excluding borders to simplify)
+            rx: int = random.randint(1, self.width - 2)
+            ry: int = random.randint(1, self.height - 2)
+            # Pick a random direction
+            dir_name: str = random.choice(list(self.direction.keys()))
+            dx, dy, bit_idx = self.direction[dir_name]
+            nx: int = rx + dx
+            ny: int = ry + dy
+            # Power of 2 for the wall
+            power: int = 2 ** bit_idx
+            # If the wall exists (value // power) % 2 == 1
+            if (self.maze[ry][rx] // power) % 2 == 1:
+                # Remove wall on current cell
+                self.maze[ry][rx] -= power
+                # Remove wall on neighbor cell
+                opp_dir: str = opposites[dir_name]
+                opp_bit: int = self.direction[opp_dir][2]
+                self.maze[ny][nx] -= (2 ** opp_bit)

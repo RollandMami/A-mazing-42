@@ -15,13 +15,12 @@ class ConfigLoader(ABC):
 class TxtLoader(ConfigLoader):
     def load(self, path: str) -> Dict[str, str]:
         if not path.endswith(".txt"):
-            raise ConfigError("Le fichier de configuration doit être un .txt")
+            raise ConfigError("config file must end wiith '.txt' extention")
         parsed_data: Dict[str, str] = {}
         with open(path, "r", encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
                 if line_num > MAX_LINES:
-                    raise ConfigError("Fichier de configuration trop \
-volumineux")
+                    raise ConfigError("File too large")
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue

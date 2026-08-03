@@ -1,6 +1,7 @@
-ENV = env/
-PYTHON = python3
+ENV = venv
 BIN = $(ENV)/bin
+PYTHON = $(BIN)/python3
+PIP = $(BIN)/pip
 RM = rm -rf
 MKDIR = mkdir -p
 
@@ -14,29 +15,35 @@ LFLAGES = --warn-return-any\
 STRICT =  --strict
 
 $(ENV):
-	$(PYTHON) -m env $(ENV)
-	$(BIN)/$(PYTHON) -m pip install 
+	@python3 -m venv $(ENV)
+	@$(PIP) install --upgrade -q pip
+	@echo venv created successfully...
 
 install: $(ENV)
-	$(PIP) install -r requirements.txt
+	@echo installing packages...
+	@$(PIP) install --find-links=. -q -r requirements.txt
+	@$(PIP) install -q -e src/
+	@echo Packages installed...
 
 run: install
-	$(BIN)/$(PYTHON)  $(MAIN) $(CFG)
+	@echo A maze is runing...
+	@$(PYTHON) $(MAIN) $(CFG)
 
 debug:
-	$(BIN)/$(PYTHON) -m pdb $(MAIN) $(CFG) 
+	@$(PYTHON) -m pdb $(MAIN) $(CFG)
 
 clean:
-	$(RM) .mypy_cache/ .pytest_cache/
-	find . -type d -name "__pycache__" -exec $(RM) {} +
-	find . -type f -name "*.pyc" -delete
+	@$(RM) .mypy_cache/ .pytest_cache/
+	@find . -type d -name "__pycache__" -exec $(RM) {} +
+	@find . -type f -name "*.pyc" -delete
+	@echo clean up successful
 
 lint:
-	$(PYTHON) -m flake8 .
-	$(PYTHON) -m mypy . $(LFLAGES)
+	@$(BIN)/flake8 . --exclude=$(ENV)
+	@$(BIN)/mypy . $(LFLAGES) --exclude '^$(ENV)/'
 
 lint-strict:
-	$(PYTHON) -m flake8 . $(STRICT)
-	$(PYTHON) -m mypy . $(STRICT)
+	@$(BIN)/flake8 . --exclude=$(ENV)
+	@$(BIN)/mypy . $(LFLAGES) $(STRICT) --exclude '^$(ENV)/'
 
 .PHONY: all install run test clean fclean lint

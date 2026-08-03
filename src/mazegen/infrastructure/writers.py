@@ -5,7 +5,7 @@ from typing import List
 class BaseWriter(ABC):
     @abstractmethod
     def write(self, maze: List[List[int]], destination: str) -> None:
-        """Méthode pour écrire le labyrinthe sur un support donné"""
+        """class method for writing the maze on destination file"""
         ...
 
     @abstractmethod
@@ -21,14 +21,14 @@ class TxtWriter(BaseWriter):
             )
             with open(destination, 'w') as f:
                 f.write(content + "\n")
-            print(f"Succès : Labyrinthe exporté dans {destination}")
+            print(f"Succès : Labyrinthe exported in {destination}")
         except IOError as e:
-            print(f"Erreur lors de l'écriture du fichier : {e}")
+            print(f"Erreur while writing file : {e}")
 
     def insert(self, txt: str, destination: str) -> None:
         try:
             with open(destination, 'a') as f:
                 f.write(str(txt) + "\n")
-            print(f"Succès : Labyrinthe exporté dans {destination}")
+            print(f"Succès : Labyrinthe exported in {destination}")
         except IOError as e:
-            print(f"Erreur lors de l'écriture du fichier : {e}")
+            print(f"Erreur  while writing file : {e}")

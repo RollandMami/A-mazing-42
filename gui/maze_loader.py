@@ -2,7 +2,7 @@ import os
 from typing import List, Tuple, Set, Any
 
 from gui.config import MAZE_NBR
-from mazegen import Config  # type: ignore[import-untyped]
+from mazegen import Config
 from mazegen import TxtWriter
 from mazegen import PrimGenerator
 from mazegen import BaseGen

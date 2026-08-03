@@ -24,6 +24,13 @@ class BfsSolver(BaseSolver):
         (-1, 0),  # Ouest
     ]
 
+    DIRECTIONS_Dict = {
+        (0, -1): 'N',
+        (1,  0): 'E',
+        (0,  1): 'S',
+        (-1, 0): 'W'
+    }
+
     # Mur bit pour chaque direction depuis la cellule courante
     WALL_BITS = {
         (0, -1): 0x1,  # Nord
@@ -75,13 +82,18 @@ class BfsSolver(BaseSolver):
             if (cx, cy) == (ex, ey):
                 # Reconstruire le chemin
                 path: List[Tuple[int, int]] = []
+                literal: str = ""
                 x, y = cx, cy
                 while (x, y) != (-1, -1):
                     path.append((x, y))
                     px, py = parent[y][x]
+                    if (px, py) != (-1, -1):
+                        dx, dy = x - px, y - py
+                        l: str = self.DIRECTIONS_Dict[(dx, dy)]
+                        literal += l
                     x, y = px, py
                 path.reverse()
-                return path
+                return path, literal
 
             cell = grid[cy][cx]
 

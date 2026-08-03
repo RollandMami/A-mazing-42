@@ -1,11 +1,16 @@
 from ..infrastructure import Config, BaseWriter, TxtWriter
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Optional
+from ..solver import BaseSolver, BfsSolver
 import random
 
 
 class BaseGen(ABC):
-    def __init__(self, cfg: Config, writer: BaseWriter) -> None:
+    def __init__(self,
+                 cfg: Config,
+                 writer: BaseWriter,
+                 solver: BaseSolver = BfsSolver
+                 ) -> None:
         # dimension du maze:
         self._width: int = cfg.width
         self._height: int = cfg.height
@@ -25,6 +30,7 @@ class BaseGen(ABC):
             "S": (0, 1, 2),
             "O": (-1, 0, 3)
         }
+        self.solver: BaseSolver = solver()
         self._size: int = self._height * self._width
         self._min_logo_size: int = 12 * 8
         self._writer = writer if writer else TxtWriter()
@@ -34,7 +40,7 @@ class BaseGen(ABC):
         if self._size >= self._min_logo_size:
             self._mask_42 = self._apply_mask()
         else:
-            print("La dimension du maze est trop petit pour le chiffre 42")
+            print("The maze dimension is too small for 42 logo")
 
     @property
     def width(self) -> int:
@@ -45,7 +51,7 @@ class BaseGen(ABC):
         return self._height
 
     @property
-    def seed(self) -> int:
+    def seed(self) -> int | None:
         return self._seed
 
     @property
@@ -60,6 +66,9 @@ class BaseGen(ABC):
         self._writer.write(self.maze, self.output_file)
         meta: str = f"\n{self._entry}\n{self._exit}"
         self._writer.insert(meta, self.output_file)
+        res = self.solver.solve(self.maze, self._entry, self._exit)[1]
+        solution: str = f"\n{res}"
+        self._writer.insert(solution, self.output_file)
 
     def _apply_mask(self) -> List[Tuple[int, int]]:
         coords: List[Tuple[int, int]] = [

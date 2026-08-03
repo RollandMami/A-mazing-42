@@ -11,7 +11,7 @@ def main() -> None:
             orchestrator: MazeGenerator = MazeGenerator(config_file)
             orchestrator.run()
         except Exception as e:
-            print(e)
+            print(f"{type(e).__name__}: {e}")
 
 
 if __name__ == "__main__":

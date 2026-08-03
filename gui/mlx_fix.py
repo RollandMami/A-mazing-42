@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 from ctypes import CFUNCTYPE, py_object, c_void_p, c_int, c_uint
-import mlx  # type: ignore[import-untyped]
+import mlx
 from typing import Any, Optional
 
 
-class PatchedMlx(mlx.Mlx):  # type: ignore[misc]
+class PatchedMlx(mlx.Mlx):  # type: ignore[misc, unused-ignore]
 
     def mlx_hook(self,
                  win_ptr: Any,

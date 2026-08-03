@@ -12,7 +12,7 @@ class DfsGenerator(BaseGen):
     def generate(self) -> None:
         try:
             if self.width <= 0 or self.height <= 0:
-                raise GenerationError("La largeur doit être positive.")
+                raise GenerationError("Dimension must be positive.")
             random.seed(self.seed)
             if not self._entry:
                 self._entry = (0, 0)
@@ -40,7 +40,7 @@ class DfsGenerator(BaseGen):
                 else:
                     stack.pop()
         except Exception as e:
-            raise GenerationError(f"Échec de la génération : {e}")
+            raise GenerationError(f"Generation failed : {e}")
 
     def _get_voisin(self, curr_x: int, curr_y: int, visited: set[Any]
                     ) -> list[tuple[int, int, int, str]]:

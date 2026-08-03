@@ -17,7 +17,7 @@ from gui.renderer import Renderer
 from gui.events import EventHandler
 from gui.maze_loader import load_maze_from_file, generate_new_maze
 
-from mazegen import BfsSolver  # type: ignore[import-untyped]
+from mazegen import BfsSolver
 
 
 import time

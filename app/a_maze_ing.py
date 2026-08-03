@@ -1,1 +1,0 @@
-# Initialise le moteur et lance la boucle

@@ -1,1 +1,0 @@
-# Couleurs, tailles des tuiles, patterns

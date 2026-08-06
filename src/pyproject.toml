@@ -11,9 +11,6 @@ packages = [{ include = "mazegen", from = "src" }]
 python = "^3.10"
 pydantic = "^2.7"
 
-[tool.poetry.scripts]
-maze-gen = "mazegen.mazegen_main:main"
-
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

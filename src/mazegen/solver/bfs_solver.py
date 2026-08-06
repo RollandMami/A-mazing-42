@@ -4,24 +4,29 @@ from .base_solver import BaseSolver
 
 
 class BfsSolver(BaseSolver):
-    """
-    Solveur BFS (Breadth-First Search) pour trouver le plus court chemin
-    dans un labyrinthe represente par une grille de murs codes en bits.
+    """Breadth-First Search (BFS) maze solver.
 
-    Chaque cellule contient un entier dont les bits indiquent les murs :
-      Bit 0 (0x1) = Nord
-      Bit 1 (0x2) = Est
-      Bit 2 (0x4) = Sud
-      Bit 3 (0x8) = Ouest
-    Un mur est present si le bit correspondant est a 1.
+    This class implements the BFS algorithm to find the guaranteed shortest
+    path in a maze represented by a 2D grid of bitmask-encoded walls.
+
+    Attributes:
+        DIRECTIONS (List[Tuple[int, int]]): Directional vectors for North,
+            East, South, and West navigation.
+        DIRECTIONS_Dict (Dict[Tuple[int, int], str]): Mapping of directional
+            vectors to their cardinal letter representation
+            ('N', 'E', 'S', 'W').
+        WALL_BITS (Dict[Tuple[int, int], int]): Bitmask values corresponding to
+            walls in each direction from the current cell.
+        OPPOSITE_BITS (Dict[Tuple[int, int], int]): Bitmask values
+        corresponding
+            to walls on the adjacent side of target neighboring cells.
     """
 
-    # Directions : (dx, dy)
     DIRECTIONS = [
-        (0, -1),  # Nord
-        (1,  0),  # Est
-        (0,  1),  # Sud
-        (-1, 0),  # Ouest
+        (0, -1),  # North
+        (1,  0),  # East
+        (0,  1),  # South
+        (-1, 0),  # West
     ]
 
     DIRECTIONS_Dict = {
@@ -31,33 +36,49 @@ class BfsSolver(BaseSolver):
         (-1, 0): 'W'
     }
 
-    # Mur bit pour chaque direction depuis la cellule courante
     WALL_BITS = {
-        (0, -1): 0x1,  # Nord
-        (1,  0): 0x2,  # Est
-        (0,  1): 0x4,  # Sud
-        (-1, 0): 0x8,  # Ouest
+        (0, -1): 0x1,  # North
+        (1,  0): 0x2,  # East
+        (0,  1): 0x4,  # South
+        (-1, 0): 0x8,  # West
     }
 
-    # Mur oppose dans la cellule voisine
     OPPOSITE_BITS = {
-        (0, -1): 0x4,  # Nord -> oppose Sud dans la cellule au Nord
-        (1,  0): 0x8,  # Est  -> oppose Ouest dans la cellule a l'Est
-        (0,  1): 0x1,  # Sud  -> oppose Nord dans la cellule au Sud
-        (-1, 0): 0x2,  # Ouest-> oppose Est dans la cellule a l'Ouest
+        (0, -1): 0x4,  # North -> South wall in neighbor
+        (1,  0): 0x8,  # East  -> West wall in neighbor
+        (0,  1): 0x1,  # South -> North wall in neighbor
+        (-1, 0): 0x2,  # West  -> East wall in neighbor
     }
 
     def solve(self, grid: List[List[int]],
               start: Tuple[int, int],
-              end: Tuple[int, int]) -> Optional[List[Tuple[int, int]]]:
-        """Resout le labyrinthe par BFS et retourne le chemin le plus court."""
+              end: Tuple[int, int]
+              ) -> Optional[tuple[List[Tuple[int, int]], str]]:
+        """Solves the maze grid using Breadth-First Search (BFS).
+
+        Args:
+            grid (List[List[int]]): 2D grid representing the maze structure,
+                where each integer cell contains a 4-bit wall bitmask.
+            start (Tuple[int, int]): Starting (x, y) coordinates.
+            end (Tuple[int, int]): Target (x, y) coordinates.
+
+        Returns:
+            Optional[Tuple[List[Tuple[int, int]], str]]: A tuple containing:
+                - List[Tuple[int, int]]: The sequence of (x, y) cell
+                coordinates
+                  representing the shortest path from start to end.
+                - str: A string of cardinal directions ('N', 'S', 'E', 'W')
+                  describing the movements taken along the path.
+                Returns `None` if no path is found or input coordinates are
+                out of bounds.
+        """
         if not grid or not grid[0]:
             return None
 
         height = len(grid)
         width = len(grid[0])
 
-        # Verifier que start et end sont dans la grille
+        # Verify that start & end are in the maze
         sx, sy = start
         ex, ey = end
         if not (0 <= sx < width and 0 <= sy < height):
@@ -67,7 +88,7 @@ class BfsSolver(BaseSolver):
 
         # BFS
         visited = [[False] * width for _ in range(height)]
-        # parent[x][y] = (px, py) pour reconstruire le chemin
+        # parent[x][y] = (px, py) for path
         parent: List[List[Tuple[int, int]]] = [
             [(-1, -1)] * width for _ in range(height)]
 
@@ -78,9 +99,9 @@ class BfsSolver(BaseSolver):
         while queue:
             cx, cy = queue.popleft()
 
-            # Arrive a la sortie ?
+            # exit ?
             if (cx, cy) == (ex, ey):
-                # Reconstruire le chemin
+                # Reconstruct path
                 path: List[Tuple[int, int]] = []
                 literal: str = ""
                 x, y = cx, cy
@@ -93,6 +114,7 @@ class BfsSolver(BaseSolver):
                         literal += l
                     x, y = px, py
                 path.reverse()
+                literal = literal[::-1]
                 return path, literal
 
             cell = grid[cy][cx]
@@ -101,20 +123,20 @@ class BfsSolver(BaseSolver):
             for dx, dy in self.DIRECTIONS:
                 nx, ny = cx + dx, cy + dy
 
-                # Verifier les limites
+                # bound verification
                 if not (0 <= nx < width and 0 <= ny < height):
                     continue
 
-                # Deja visite ?
+                # already visited ?
                 if visited[ny][nx]:
                     continue
 
-                # Verifier qu'il n'y a pas de mur dans cette direction
+                # verify that there's no wall on this direction
                 wall_bit = self.WALL_BITS[(dx, dy)]
                 if cell & wall_bit:
-                    continue  # mur present, on ne peut pas passer
+                    continue  # if wall, we cant go further
 
-                # Verifier que la cellule voisine n'a pas de mur oppose
+                # verify that the opposite cell does not have wall
                 neighbor_cell = grid[ny][nx]
                 opp_bit = self.OPPOSITE_BITS[(dx, dy)]
                 if neighbor_cell & opp_bit:
@@ -124,5 +146,5 @@ class BfsSolver(BaseSolver):
                 parent[ny][nx] = (cx, cy)
                 queue.append((nx, ny))
 
-        # Aucun chemin trouve
+        # No path found
         return None

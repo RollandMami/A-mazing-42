@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by mamiandr[, <login2>[, <login3>]].*
+*This project has been created as part of the 42 curriculum by mamiandr, arakotot.*
 
 # A-Maze-ing 🌀
 
@@ -8,24 +8,37 @@
 
 ## Table of Contents
 
-- [Description](#description)
-- [Features](#features)
-- [Project structure](#project-structure)
-- [Instructions](#instructions)
-  - [Requirements](#requirements)
-  - [Installation](#installation)
-  - [Generate a maze (CLI)](#generate-a-maze-cli)
-  - [Graphical display (MLX)](#graphical-display-mlx)
-  - [Makefile](#makefile)
-  - [Building the reusable `mazegen` package](#building-the-reusable-mazegen-package)
-- [Configuration file](#configuration-file)
-- [Output file](#output-file)
-- [Generation algorithm](#generation-algorithm)
-- [Reusable `mazegen` module](#reusable-mazegen-module)
-- [Graphical interface controls](#graphical-interface-controls)
-- [Team and project management](#team-and-project-management)
-- [Bonuses](#bonuses)
-- [Resources](#resources)
+- [A-Maze-ing 🌀](#a-maze-ing-)
+	- [Table of Contents](#table-of-contents)
+	- [Description](#description)
+	- [Features](#features)
+	- [Project structure](#project-structure)
+	- [Instructions](#instructions)
+		- [Requirements](#requirements)
+		- [Installation](#installation)
+		- [Generate a maze (CLI)](#generate-a-maze-cli)
+		- [Graphical display (MLX)](#graphical-display-mlx)
+		- [Makefile](#makefile)
+		- [Building the reusable `mazegen` package](#building-the-reusable-mazegen-package)
+	- [Configuration file](#configuration-file)
+	- [Output file](#output-file)
+	- [Generation algorithm](#generation-algorithm)
+		- [Why this algorithm?](#why-this-algorithm)
+	- [Reusable `mazegen` module](#reusable-mazegen-module)
+		- [Installation](#installation-1)
+		- [Basic usage](#basic-usage)
+		- [Passing custom parameters (size, seed…)](#passing-custom-parameters-size-seed)
+		- [Accessing the generated structure and the solution](#accessing-the-generated-structure-and-the-solution)
+	- [Graphical interface controls](#graphical-interface-controls)
+	- [Team and project management](#team-and-project-management)
+		- [Roles](#roles)
+		- [Planning](#planning)
+		- [Retrospective](#retrospective)
+		- [Tools used](#tools-used)
+	- [Bonuses](#bonuses)
+	- [Resources](#resources)
+		- [Documentation and references](#documentation-and-references)
+		- [Use of AI](#use-of-ai)
 
 ---
 
@@ -65,24 +78,22 @@ The core generation logic (configuration parsing, generation algorithms, solver,
 │   ├── pyproject.toml        # `mazegen` package definition (Poetry build)
 │   ├── poetry.lock
 │   └── mazegen/
-│       ├── __init__.py       # Exposes the package's public API
-│       ├── mazegen_main.py   # CLI orchestration (entry point of the `maze-gen` script)
+│       ├── __init__.py       # Exposes the package's public API (Config, TxtWriter, BaseGen, PrimGenerator, DfsGenerator, BfsSolver, MazeGenerator)
 │       ├── core/
-│       │   └── maze_engine.py   # `MazeGenerator`: orchestrator (config → generation → export)
+│       │   └── maze_engine.py   # `MazeGenerator`: high-level orchestrator (config → engine selection → generation → export)
 │       ├── infrastructure/
-│       │   ├── config_parser.py # `Config` + Pydantic validation of the config file
-│       │   ├── loaders.py       # Parsing of the `KEY=VALUE` config file
-│       │   ├── writers.py       # Writing of the output file (hexadecimal grid)
-│       │   └── Errors.py
+│       │   ├── config_parser.py # `Config`/`ConfigModel` + Pydantic validation of the config file
+│       │   ├── loaders.py       # `TxtLoader`: parsing of the `KEY=VALUE` config file (1000-line limit)
+│       │   ├── writers.py       # `TxtWriter`: writing of the output file (hexadecimal grid)
+│       │   └── Errors.py        # `ConfigError`
 │       ├── generator/
 │       │   ├── base_gen.py      # `BaseGen`: abstract class ("42" mask, imperfections, export)
 │       │   ├── prim_gen.py      # `PrimGenerator`: generation using Prim's algorithm
 │       │   ├── dfs_gen.py       # `DfsGenerator`: generation via depth-first search (DFS)
-│       │   └── Errors.py
+│       │   └── Errors.py        # `MazeError`, `GenerationError`
 │       └── solver/
-│           ├── base_solver.py
-│           ├── bfs_solver.py    # `BfsSolver`: shortest path (BFS)
-│           └── astar_solver.py  # (reserved for a future A* implementation)
+│           ├── base_solver.py   # `BaseSolver`: abstract solver interface
+│           └── bfs_solver.py    # `BfsSolver`: shortest path (BFS) — currently the only implemented solver
 └── gui/
     ├── window.py              # `Window`: main MLX loop, state of the displayed maze
     ├── renderer.py            # `Renderer`: pixel-by-pixel drawing of the maze into the MLX buffer
@@ -172,8 +183,8 @@ The configuration file must contain one `KEY=VALUE` pair per line. Lines startin
 | `EXIT` | ✅ | Exit coordinates `x,y`, must be within the grid bounds. | `EXIT=19,14` |
 | `OUTPUT_FILE` | ✅ | Output filename (must end with `.txt`, no whitespace). | `OUTPUT_FILE=maze.txt` |
 | `PERFECT` | ✅ | `True`/`False` — if `True`, the maze contains exactly one path between entry and exit. If `False`, loops are added (~10% of the internal walls are additionally broken). | `PERFECT=True` |
-| `SEED` | optional | Random seed for reproducibility. If omitted, a random seed is generated. | `SEED=42` |
-| `ALGORITHM` | optional | Generation algorithm: `1` = DFS, `2` = Prim, `3` = A* *(reserved)*. | `ALGORITHM=2` |
+| `SEED` | optional | Random seed for reproducibility. If omitted, a random seed is generated (integer between 0 and 999). | `SEED=42` |
+| `ALGORITHM` | optional | Generation algorithm: `0`/`DFS` = DFS *(default)*, `1`/`PRIM` = Prim. Accepts either the integer or the algorithm name (case-insensitive). A third, A\*-based algorithm is planned but not implemented yet. | `ALGORITHM=1` or `ALGORITHM=prim` |
 | `DISPLAY_MODE` | optional | Reserved for a future alternative display mode. | `DISPLAY_MODE=default` |
 
 Configuration file validation (types, bounds, coordinate format, output filename extension…) is handled with **Pydantic**. Any invalid configuration triggers a clear error message, without crashing the program.
@@ -205,25 +216,30 @@ After the grid, a blank line separates the following metadata:
 
 ## Generation algorithm
 
-**Primary algorithm: randomized Prim's algorithm** (`PrimGenerator`).
+**Default algorithm: DFS / recursive backtracker** (`DfsGenerator`, `ALGORITHM=0` or unset).
 
 Principle:
-1. Start from a random cell, added to the set of "visited" cells.
-2. All of its neighbors are added to a list of "frontier" cells.
-3. While there are frontier cells left: pick one at random, connect it to one of its already-visited neighbors (breaking the corresponding wall on both sides, to guarantee consistency between neighboring cells), then add it to the visited set and expand the frontier list.
-4. If `PERFECT=False`, an additional pass randomly breaks ~10% of the internal walls (excluding the "42" pattern) to create loops.
+1. Start from the entry cell, pushed onto a stack and marked as visited.
+2. While the stack is not empty: look at the cell on top of the stack, list its unvisited neighbors.
+3. If it has at least one unvisited neighbor, pick one at random, break the wall between the two cells (on both sides, to guarantee consistency), mark it visited and push it onto the stack.
+4. If it has none, pop it off the stack (backtrack).
+5. If `PERFECT=False`, an additional pass randomly breaks ~10% of the internal walls (excluding the "42" pattern) to create loops.
 
-A second algorithm, **DFS / recursive backtracker** (`DfsGenerator`), is also implemented and selectable via the `ALGORITHM` key in the configuration file.
+A second algorithm, **randomized Prim's algorithm** (`PrimGenerator`), is also implemented and selectable with `ALGORITHM=1` (or `ALGORITHM=prim`) in the configuration file. It starts from a random cell, grows a "frontier" list of unvisited neighbors, and repeatedly connects a random frontier cell to an already-visited neighbor until the frontier is empty.
 
 ### Why this algorithm?
 
-**Prim's algorithm** was chosen as the default because:
+**DFS** was kept as the default because:
 
-- it produces mazes with **many short branches** rather than long winding corridors (unlike DFS, which tends to generate long dead ends) — resulting in a more "organic" visual look, closer to a real-world maze.
-- it fits naturally with our **protected-mask** logic (the "42" pattern): it is enough to exclude certain cells from the frontier list to guarantee they are never connected to the rest of the maze other than along their outline.
+- it is simple to implement and reason about, and it guarantees a perfect maze (single spanning tree) by construction.
+- it fits naturally with the entry point: generation starts directly from the configured `ENTRY` cell.
+- it produces long, winding corridors with few branches, which reads well in the graphical display.
+
+**Prim's algorithm** remains available as an alternative:
+
+- it produces mazes with **many short branches** rather than long winding corridors — resulting in a more "organic" visual look, closer to a real-world maze.
+- it fits naturally with the **protected-mask** logic (the "42" pattern): it is enough to exclude certain cells from the frontier list to guarantee they are never connected to the rest of the maze other than along their outline.
 - its complexity remains reasonable (roughly `O(cells × 4)` thanks to the frontier structure), which allows large grids to be generated quickly without degrading the graphical interface's experience (the "regenerate" action).
-
-**DFS** remains available as an alternative: simpler to implement and understand, it generates mazes with longer corridors and fewer branches, useful for comparing the two approaches.
 
 ## Reusable `mazegen` module
 
@@ -239,11 +255,24 @@ cd src && pip install -e . --break-system-packages
 
 ### Basic usage
 
+The simplest way to use the module is through the `MazeGenerator` orchestrator, which selects the right engine (DFS or Prim) automatically from the configuration:
+
+```python
+from mazegen import MazeGenerator
+
+# From a KEY=VALUE configuration file
+generator = MazeGenerator.from_config("config.txt")
+generator.generate()
+generator.export()  # writes the grid + entry/exit + solution to OUTPUT_FILE
+```
+
+For finer control, the lower-level building blocks (`Config`, `TxtWriter`, `PrimGenerator`/`DfsGenerator`, `BfsSolver`) remain accessible directly:
+
 ```python
 from mazegen import Config, TxtWriter, PrimGenerator, BfsSolver
 
 # 1. Load a configuration (KEY=VALUE text file)
-cfg = Config("config.txt")
+cfg = Config.from_file("config.txt")
 
 # 2. Instantiate the generator with a writer
 writer = TxtWriter()
@@ -258,25 +287,40 @@ generator.export()
 
 ### Passing custom parameters (size, seed…)
 
-Parameters (`WIDTH`, `HEIGHT`, `ENTRY`, `EXIT`, `PERFECT`, `SEED`, `ALGORITHM`…) are defined in the configuration file loaded by `Config`. The `seed` guarantees reproducibility: two runs with the same configuration and the same seed produce exactly the same maze.
+Parameters (`WIDTH`, `HEIGHT`, `ENTRY`, `EXIT`, `PERFECT`, `SEED`, `ALGORITHM`…) can come from a configuration file (`Config.from_file`) or be passed directly as keyword arguments (`Config.from_params`, or directly to `MazeGenerator`). The `seed` guarantees reproducibility: two runs with the same configuration and the same seed produce exactly the same maze.
 
 ```python
-cfg = Config("my_config.txt")
+# From a file
+cfg = Config.from_file("my_config.txt")
 print(cfg.width, cfg.height, cfg.seed, cfg.perfect)
+
+# Or directly from parameters, via MazeGenerator
+generator = MazeGenerator(
+    width=20, height=20,
+    entry=(0, 0), exit_pos=(19, 19),
+    seed=42, perfect=True, algorithm="dfs",
+    output_file="maze.txt",
+)
 ```
 
 ### Accessing the generated structure and the solution
 
 ```python
+# With a low-level generator (PrimGenerator/DfsGenerator):
 # The grid: a list of lists of integers (wall bitmask per cell)
 grid = generator.maze
 
 # The solution: shortest path between entry and exit (coordinates + literal path)
 solver = BfsSolver()
 path_coords, path_letters = solver.solve(grid, cfg.entry_pt, cfg.exit_pt)
+# generator.solution returns the same (path_coords, path_letters) tuple, cached
+
+# With the MazeGenerator orchestrator, the same data is available via:
+grid = mg.get_grid()          # list[list[int]]
+path_coords = mg.get_solution()  # list[tuple[int, int]]
 ```
 
-> ℹ️ **Note**: the structure exposed via `generator.maze` (a list of lists of integers) is not necessarily identical to the output file's text format — it is designed to be manipulated directly in memory by a future project.
+> ℹ️ **Note**: the structure exposed via `maze`/`get_grid()` (a list of lists of integers) is not necessarily identical to the output file's text format — it is designed to be manipulated directly in memory by a future project.
 
 ## Graphical interface controls
 
@@ -305,7 +349,7 @@ The window also displays the entry (green), the exit (red), the "42" pattern (de
 ### Retrospective
 
 - **What went well**: *(to be completed)*
-- **What could be improved**: *(to be completed — e.g. dynamic algorithm selection via `ALGORITHM` to be wired into `MazeGenerator`, implementation of the A* solver, ASCII terminal rendering in addition to the MLX rendering)*
+- **What could be improved**: *(to be completed — e.g. implementation of the A\* solver/generator (currently only DFS/Prim + BFS solver exist), ASCII terminal rendering in addition to the MLX rendering)*
 
 ### Tools used
 
@@ -318,7 +362,8 @@ The window also displays the entry (green), the exit (red), the "42" pattern (de
 ## Bonuses
 
 - Two generation algorithms available (Prim, DFS), selectable via the `ALGORITHM` key.
-- *(complete if other bonuses were implemented, e.g. generation animation, ASCII display mode, dedicated coloring of the "42" pattern…)*
+- generation animation
+- path finding animation
 
 ## Resources
 

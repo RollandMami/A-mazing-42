@@ -51,8 +51,8 @@ class ConfigModel(BaseModel):
         display_mode (Optional[str]): Visualization mode identifier.
     """
     model_config = ConfigDict(populate_by_name=True)
-    width: int = Field(..., alias="WIDTH", gt=0, lt=200)
-    height: int = Field(..., alias="HEIGHT", gt=0, lt=100)
+    width: int = Field(..., alias="WIDTH", ge=5, le=200)
+    height: int = Field(..., alias="HEIGHT", ge=5, le=100)
     entry: tuple[int, int] = Field(..., alias="ENTRY")
     exit: tuple[int, int] = Field(..., alias="EXIT")
     output_file: str = Field(..., alias="OUTPUT_FILE")
@@ -80,7 +80,10 @@ class ConfigModel(BaseModel):
             parts = [c.strip() for c in v.split(",")]
             if len(parts) != 2:
                 raise ValueError("Must be a positive format 'x,y'")
-            x, y = int(parts[0]), int(parts[1])
+            try:
+                x, y = int(parts[0]), int(parts[1])
+            except ValueError:
+                raise ValueError("Coordinates must be valid integers")
             if x < 0 or y < 0:
                 raise ValueError("Must be a positive coordinate format 'x,y'")
             return (x, y)
@@ -133,7 +136,7 @@ class ConfigModel(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_bounds(self) -> "ConfigModel":
+    def validate_rules(self) -> "ConfigModel":
         """Verifies that entry and exit coordinates lie within
         the grid boundaries.
         Returns:
@@ -148,6 +151,11 @@ class ConfigModel(BaseModel):
             if not (0 <= x < w and 0 <= y < h):
                 raise ValueError(
                     f"{name} ({x},{y}) is out of bounds ({w}x{h})")
+
+        if self.entry == self.exit:
+            raise ValueError(
+                f"Entry[{self.entry}] collide with Exit[{self.exit}]"
+            )
         return self
 
 
@@ -174,8 +182,7 @@ class Config:
         except ValidationError as e:
             err = e.errors()[0]
             field = ".".join(map(str, err["loc"]))
-            print(f"{field}: {err['msg']}")
-            sys.exit(1)
+            raise ConfigError(f"{field}: {err['msg']}") from e
         except Exception as e:
             raise ConfigError(f"Configuration error: {e}") from e
 

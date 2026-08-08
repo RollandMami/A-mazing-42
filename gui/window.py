@@ -2,6 +2,7 @@
 import sys
 from typing import Any, Optional
 import time
+import signal
 try:
     from gui.mlx_fix import PatchedMlx
 except Exception as e:
@@ -69,10 +70,37 @@ class Window:
         self.generation_row = 0
         self.generation_col = 0
 
-        #  self.generation_speed = 5
-        #  self.path_speed = 2
-
         self.last_frame = time.time()
+
+    def _handle_terminal_interrupt(self, signum: int, frame: Any) -> None:
+        """Intercepts Ctrl+C (SIGINT) and Ctrl+Z (SIGTSTP) to avoid raising
+        KeyboardInterrupt in the middle of a ctypes/MiniLibX callback.
+
+        MiniLibX callbacks are invoked from C through ctypes, which cannot
+        propagate a Python exception back through the C call stack. Letting
+        the default SIGINT/SIGTSTP behaviour fire mid-callback produces the
+        ugly "Exception ignored on calling ctypes callback function"
+        traceback instead of a clean shutdown message. Handling the signal
+        ourselves means we run as normal Python code (no exception raised),
+        so nothing needs to cross the ctypes boundary.
+
+        Args:
+            signum: Signal number received (SIGINT or SIGTSTP).
+            frame: Current stack frame (unused, required by signal API).
+        """
+        print(
+            "\nVeuillez utiliser le bouton [X] de la fenêtre "
+            "ou la touche Echap du clavier pour quitter proprement."
+            "You are crazy guys XP"
+        )
+
+    def _install_signal_handlers(self) -> None:
+        """Registers custom handlers for SIGINT (Ctrl+C) and SIGTSTP
+        (Ctrl+Z) so they display a clean message instead of interrupting
+        a MiniLibX ctypes callback mid-flight."""
+        signal.signal(signal.SIGINT, self._handle_terminal_interrupt)
+        if hasattr(signal, "SIGTSTP"):
+            signal.signal(signal.SIGTSTP, self._handle_terminal_interrupt)
 
     def load_maze(self,
                   grid: Any,
@@ -144,7 +172,7 @@ class Window:
         except (FileNotFoundError, ValueError) as e:
             print(f"Error : {e}")
 
-    def regenerate_maze(self, cfg: str | None) -> bool:
+    def regenerate_maze(self, cfg: str | None = None) -> bool:
         """Triggers generator logic to create and load a new maze structure.
 
         Args:
@@ -259,6 +287,7 @@ class Window:
     def run(self) -> None:
         """Configures hooks, draws initial elements, and launches the
         MiniLibX event loop."""
+        self._install_signal_handlers()
         self.events.setup_hooks()
 
         self.mlx.mlx_loop_hook(

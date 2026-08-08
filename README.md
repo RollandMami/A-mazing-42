@@ -337,19 +337,19 @@ The window also displays the entry (green), the exit (red), the "42" pattern (de
 
 ### Roles
 
-*(to be completed — e.g. generation/algorithms, infrastructure/config, solver, MLX display, packaging & linting)*
-
-- **[Name / login]** — …
-- **[Name / login]** — …
+- **Alexandrô / arakotot** — front end, mlx rendering, fix CFUNCTYPE, ...
+- **Rolland / mamiandr** — mazegenerator parts, installable package, algorithm and data validation ...
 
 ### Planning
 
-*(to be completed — organization planned at the start of the project, deviations observed and adjustments made along the way)*
+Our schedule was quite tight. We defined everyone's tasks beforehand and set strict timelines for the project's progress. Specifically, arakotot stayed on campus on Mondays and worked on the project every afternoon, while mamiandr completed his share every morning from 5:00 AM to 9:00 AM. Fridays were reserved for meetings, progress reporting, and weekly check-ins. We used this time to share our research findings and align on the next steps.
+
+The main weakness of our planning was that we had very little time for peer learning, as our schedules only overlapped on Fridays. If we were to do it differently, we would create a schedule that incorporates more peer learning.
 
 ### Retrospective
 
-- **What went well**: *(to be completed)*
-- **What could be improved**: *(to be completed — e.g. implementation of the A\* solver/generator (currently only DFS/Prim + BFS solver exist), ASCII terminal rendering in addition to the MLX rendering)*
+- **What went well**: infrastructure - config parser, gui - Maze loader
+- **What could be improved**: ASCII terminal rendering in addition to the MLX rendering
 
 ### Tools used
 
@@ -357,7 +357,6 @@ The window also displays the entry (green), the exit (red), the "42" pattern (de
 - **Pydantic** for strict validation of the configuration file.
 - **flake8** / **mypy** for style compliance and static typing.
 - **MiniLibX (MLX)** for the graphical display.
-- *(complete with any other tools used: editor, CI, etc.)*
 
 ## Bonuses
 
@@ -377,4 +376,4 @@ The window also displays the entry (green), the exit (red), the "42" pattern (de
 
 ### Use of AI
 
-*(to be completed precisely: for which tasks and on which parts of the project AI was used — e.g. help structuring the configuration parsing with Pydantic, review of the BFS solver, generation of this README from the existing code, etc. Every AI-generated suggestion was reviewed, tested, and discussed with a peer before being integrated, in accordance with the subject's guidelines.)*
+*In this project, AI was used for generating docstrings and the README, debugging, fixing mypy issues, and researching topics such as DFS algorithms. It proved to be an indispensable partner in completing this project.*

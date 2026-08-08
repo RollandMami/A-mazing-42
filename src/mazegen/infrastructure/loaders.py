@@ -1,7 +1,7 @@
 from typing import Dict
 from abc import ABC, abstractmethod
 from .Errors import ConfigError
-import sys
+from pathlib import Path
 
 
 MAX_LINES = 1000  # Sécurité for unsecured files
@@ -44,26 +44,27 @@ class TxtLoader(ConfigLoader):
                 `MAX_LINES`, or any line fails the `KEY=VALUE` syntax.
             FileNotFoundError: If the file at `path` does not exist.
         """
+        v = Path(path)
+        if v.is_dir():
+            raise ConfigError(
+                "Do not use directory please!!! Use <config.txt> instead")
         if not path.endswith(".txt"):
-            raise ConfigError("config file must end wiith '.txt' extention")
+            raise ConfigError("config file must end with '.txt' extention")
         parsed_data: Dict[str, str] = {}
         with open(path, "r", encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
                 if line_num > MAX_LINES:
-                    print("File exceeds max limit({MAX_LINES})")
-                    sys.exit(1)
+                    raise ConfigError("File exceeds max limit({MAX_LINES})")
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
                 if "=" not in line:
                     msg1 = f"line_{line_num}::Bad syntax,\n"
                     msg2 = "file must contain one ‘KEY=VALUE‘ pair per line"
-                    print(msg1 + msg2)
-                    sys.exit(1)
+                    raise ConfigError(msg1 + msg2)
                 if "#" in line:
                     msg1 = f"line_{line_num} <{line}> Bad syntax,\n"
-                    print(msg1 + "Inline comment forbidden")
-                    sys.exit(1)
+                    raise ConfigError(msg1 + "Inline comment forbidden")
                 key, value = [part.strip() for part in line.split("=", 1)]
-                parsed_data[key] = value
+                parsed_data[key.upper()] = value
         return parsed_data

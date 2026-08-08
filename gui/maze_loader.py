@@ -1,6 +1,5 @@
 import os
 from typing import List, Any, Optional
-import sys
 
 from mazegen import MazeGenerator
 try:
@@ -78,6 +77,9 @@ class MazeModel(BaseModel):
             if not (0 <= x < width and 0 <= y < height):
                 raise ValueError(
                     f"{name} {pt} is out of bounds ({width}x{height})")
+        widths = {len(row) for row in self.grid}
+        if len(widths) > 1:
+            raise ValueError(f"Irregular Grid: width {widths}")
         return self
 
 
@@ -108,35 +110,49 @@ class MazeData:
         self.forty_two: set[tuple[int, int]] = set(
             self.generators.mask_42 or []
         )
-        try:
+        self.data: Optional[MazeModel] = None
+        if maze_path is not None:
             raw = self.load_maze_from_file()
-        except FileNotFoundError:
-            sys.exit(1)
-        except ValueError as e:
-            print(f"Corrupted maze file detected, regenerating: {e}")
-            sys.exit(1)
-        self.data: MazeModel = MazeModel.model_validate(raw)
+            self.data = MazeModel.model_validate(raw)
+
+    def _require_data(self) -> MazeModel:
+        """Ensures maze data has been loaded before accessing it.
+
+        Returns:
+            MazeModel: The validated, loaded maze data.
+
+        Raises:
+            RuntimeError: If no maze file was loaded (e.g. this instance
+            was built without `maze_path`, for generation purposes only).
+        """
+        if self.data is None:
+            raise RuntimeError(
+                "No maze data loaded: this MazeData instance was created "
+                "without 'maze_path'. Call generate_new_maze() or "
+                "construct MazeData with maze_path set to load a file."
+            )
+        return self.data
 
     @property
     def grid(self) -> list[list[int]]:
         """list[list[int]]: The 2D grid matrix of the maze."""
-        return self.data.grid
+        return self._require_data().grid
 
     @property
     def entry(self) -> tuple[int, int]:
         """tuple[int, int]: Entrance coordinates `(column, row)`."""
-        return self.data.entry
+        return self._require_data().entry
 
     @property
     def exit_pos(self) -> tuple[int, int]:
         """tuple[int, int]: Exit coordinates `(column, row)`."""
-        return self.data.exit_pos
+        return self._require_data().exit_pos
 
     @property
     def path(self) -> Optional[list[tuple[int, int]]]:
         """Optional[list[tuple[int, int]]]: Solved path coordinate
         steps, if available."""
-        return self.data.path
+        return self._require_data().path
 
     def load_maze_from_file(self) -> dict[str, Any]:
         """Reads and parses raw maze data from a formatted text file.
@@ -243,8 +259,12 @@ class MazeData:
         cx, cy = start
         result: list[tuple[int, int]] = [start]
         for c in path:
-            cx += DIRECTIONS_Dict[c][0]
-            cy += DIRECTIONS_Dict[c][1]
+            try:
+                dx, dy = DIRECTIONS_Dict[c]
+            except KeyError:
+                raise ValueError(f"Direction invalide dans le chemin: '{c}'")
+            cx += dx
+            cy += dy
             result.append((cx, cy))
         fx, fy = end
         if cx != fx or cy != fy:

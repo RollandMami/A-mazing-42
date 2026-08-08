@@ -67,7 +67,11 @@ class EventHandler:
         """
         action = self._bindings.get(keycode)
         if action:
-            action()
+            try:
+                action()
+            except Exception as e:
+                print("Erreur pendant l'action clavier",
+                      f" : {type(e).__name__}: {e}", sep="")
 
     def _cycle_wall_color(self) -> None:
         """Cycles through predefined wall color palettes and
